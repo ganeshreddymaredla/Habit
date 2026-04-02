@@ -32,8 +32,8 @@ Runs at http://localhost:5173
 | GET  | /api/habits/:id/logs/ | Completion history |
 
 ## Team Name
-Code Turtles
+Code Turtles  
 
-Ganesh Reddy Maredla 
-Abhishek Repala 
-Hrithik Mohan Singh Thakur
+Ganesh Reddy Maredla  
+Abhishek Repala  
+Hrithik Mohan Singh Thakur  
