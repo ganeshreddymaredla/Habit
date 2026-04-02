@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up — HabitTracker{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="text-center">
+      <div class="auth-logo">🔥</div>
+      <div class="auth-title">Create Account</div>
+      <div class="auth-subtitle">Start building powerful daily habits</div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" value="{{ form.username.value|default:'' }}"
+               class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+               placeholder="Choose a username" required />
+        {% for e in form.username.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" value="{{ form.email.value|default:'' }}"
+               class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+               placeholder="you@example.com" required />
+        {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <!-- Phone -->
+      <div class="mb-3">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" name="phone" value="{{ form.phone.value|default:'' }}"
+               class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+               placeholder="10-digit number" maxlength="10" required />
+        {% for e in form.phone.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <!-- Password -->
+      <div class="mb-1">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" id="id_password"
+               class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+               placeholder="Min 8 chars, upper, lower, number, symbol" required />
+        {% for e in form.password.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        <div id="strength-bar-wrap"><div id="strength-bar"></div></div>
+        <div id="strength-text"></div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-4 mt-3">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" name="confirm_password"
+               class="form-control {% if form.non_field_errors %}is-invalid{% endif %}"
+               placeholder="Repeat password" required />
+        {% for e in form.non_field_errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2">
+        <i class="bi bi-person-plus"></i> Create Account
+      </button>
+    </form>
+
+    <p class="text-center mt-3 mb-0" style="font-size:0.875rem; color:var(--muted)">
+      Already have an account?
+      <a href="{% url 'login' %}" style="color:var(--primary); font-weight:600">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — HabitTracker{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- Test Mode Banner -->
+  {% if test_mode %}
+  <div class="d-flex align-items-center justify-content-between mb-4 px-4 py-3 rounded-3"
+       style="background:rgba(245,158,11,0.12); border:1.5px solid #f59e0b; color:#d97706; font-weight:600; font-size:0.875rem">
+    <span>🧪 Test Mode Active — Simulating date: <strong>{{ simulated_date }}</strong></span>
+    <a href="{% url 'dashboard' %}" class="text-decoration-none" style="color:#d97706; font-size:1rem" title="Exit test mode">✕</a>
+  </div>
+  {% endif %}
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="fw-800 mb-0" style="font-size:1.6rem; color:var(--text)">
+        Hey, {{ user.username }} 👋
+      </h1>
+      <p class="mb-0" style="color:var(--muted); font-size:0.9rem">
+        {{ completed_today }}/{{ total }} habits done today
+      </p>
+    </div>
+    <a href="{% url 'add_habit' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Add Habit
+    </a>
+  </div>
+
+  <!-- Test Mode Controls -->
+  <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+    <form method="get" class="d-flex align-items-center gap-2 flex-wrap" id="test-mode-form">
+      {% if search %}<input type="hidden" name="q" value="{{ search }}">{% endif %}
+      {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+      <label class="d-flex align-items-center gap-2 mb-0" style="font-size:0.85rem; color:var(--muted); cursor:pointer">
+        <div class="test-toggle {% if test_mode %}active{% endif %}" id="test-toggle"
+             onclick="toggleTestMode()" title="Toggle Test Mode">
+          <div class="test-toggle-knob"></div>
+        </div>
+        <span style="font-weight:600">Test Mode</span>
+      </label>
+      {% if test_mode %}
+        <input type="date" name="test_date" id="test-date-input"
+               value="{{ simulated_date }}"
+               max="{% now 'Y-m-d' %}"
+               onchange="document.getElementById('test-mode-form').submit()"
+               class="form-control form-control-sm" style="max-width:160px; border-color:#f59e0b" />
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Daily Progress -->
+  {% if total > 0 %}
+  <div class="mb-4">
+    <div class="d-flex justify-content-between mb-1" style="font-size:0.85rem; color:var(--muted)">
+      <span id="daily-progress-label">
+        {{ completed_today }}/{{ total }} habits done today
+        ({% widthratio completed_today total 100 %}%)
+      </span>
+    </div>
+    <div class="progress">
+      <div class="progress-bar" id="daily-progress-bar"
+           style="width: {% widthratio completed_today total 100 %}%"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Stat Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(99,102,241,0.1)">📋</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Total Habits</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.1)">✅</div>
+        <div class="stat-value">{{ completed_today }}</div>
+        <div class="stat-label">Done Today</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(249,115,22,0.1)">🔥</div>
+        <div class="stat-value">{{ best_streak }}</div>
+        <div class="stat-label">Best Streak</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.1)">🏆</div>
+        <div class="stat-value">{{ total|add:completed_today }}</div>
+        <div class="stat-label">Score</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter -->
+  <form method="get" class="d-flex gap-2 mb-4 flex-wrap">
+    <input type="text" name="q" value="{{ search }}" placeholder="Search habits…"
+           class="form-control" style="max-width:220px" />
+    <select name="category" class="form-select" style="max-width:160px">
+      <option value="">All Categories</option>
+      {% for val, label in categories %}
+        <option value="{{ val }}" {% if category == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline-secondary">
+      <i class="bi bi-search"></i> Filter
+    </button>
+    {% if search or category %}
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-x"></i> Clear
+      </a>
+    {% endif %}
+  </form>
+
+  <!-- Habit Cards Grid -->
+  {% if habits %}
+  <div class="row g-3 mb-5">
+    {% for habit in habits %}
+    {% with done=habit.completed_today %}
+    <div class="col-12 col-sm-6 col-lg-4">
+      <div class="habit-card {% if done %}completed-card{% endif %}" id="habit-card-{{ habit.id }}">
+        <div class="habit-card-header">
+          <div>
+            <div class="habit-name">{{ habit.name }}</div>
+            {% if habit.description %}
+              <div class="habit-desc">{{ habit.description }}</div>
+            {% endif %}
+          </div>
+          <span class="habit-badge">{{ habit.get_category_display }}</span>
+        </div>
+
+        <div class="habit-streak">
+          <span class="fire">🔥</span>
+          <span>Streak: <strong id="streak-{{ habit.id }}">{{ habit.current_streak }}</strong> day{{ habit.current_streak|pluralize }}</span>
+          <span id="grace-badge-{{ habit.id }}">
+            {% if habit.grace_count >= 3 %}
+              <span class="grace-badge grace-exhausted">🚫 No grace remaining</span>
+            {% elif habit.grace_count > 0 %}
+              <span class="grace-badge">⚡ Grace: {{ habit.grace_count }}/3</span>
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="habit-actions">
+          <button id="checkin-btn-{{ habit.id }}"
+                  class="btn btn-sm btn-checkin {% if done %}done{% endif %}"
+                  onclick="checkin({{ habit.id }}, '{{ csrf_token }}', window.SIMULATED_DATE)"
+                  {% if done %}title="Click to undo"{% endif %}>
+            <i class="bi bi-check-circle{% if done %}-fill{% endif %}"></i>
+            {% if done %}Done{% else %}Mark Done{% endif %}
+          </button>
+          <a href="{% url 'edit_habit' habit.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil"></i>
+          </a>
+          <a href="{% url 'delete_habit' habit.id %}" class="btn btn-sm btn-outline-secondary text-danger">
+            <i class="bi bi-trash"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-fire d-block"></i>
+    <p>{% if search or category %}No habits match your filter.{% else %}No habits yet. Add your first one!{% endif %}</p>
+    {% if not search and not category %}
+      <a href="{% url 'add_habit' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Habit
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Weekly Chart -->
+  {% if total > 0 %}
+  <div class="analytics-card mb-4">
+    <h6 class="fw-700 mb-3" style="color:var(--text)">
+      <i class="bi bi-bar-chart-line"></i> This Week
+    </h6>
+    <canvas id="weekChart" height="100"></canvas>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Expose test mode state to checkin()
+  window.TEST_MODE = {{ test_mode|yesno:"true,false" }};
+  window.SIMULATED_DATE = "{{ simulated_date }}";
+
+  function toggleTestMode() {
+    const form = document.getElementById('test-mode-form');
+    if (window.TEST_MODE) {
+      // Turn off — navigate without test_date param
+      window.location.href = '{% url "dashboard" %}';
+    } else {
+      // Turn on — submit form with today's date
+      const today = new Date().toISOString().split('T')[0];
+      const input = document.createElement('input');
+      input.type = 'hidden'; input.name = 'test_date'; input.value = today;
+      form.appendChild(input);
+      form.submit();
+    }
+  }
+
+  const labels = {{ week_labels|safe }};
+  const data   = {{ week_data|safe }};
+  const isDark = localStorage.getItem('theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+
+  const ctx = document.getElementById('weekChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Completions',
+          data,
+          backgroundColor: 'rgba(99,102,241,0.7)',
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } },
+          x: { ticks: { color: textColor }, grid: { display: false } },
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}

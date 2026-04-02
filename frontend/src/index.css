@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+  }
+  .dark {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: #334155;
+    --primary: #818cf8;
+    --primary-hover: #6366f1;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s;
+  }
+}
+
+/* ── Card hover ── */
+.habit-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.habit-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+
+/* ── Streak fire ── */
+@keyframes pulse-fire {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.streak-fire { animation: pulse-fire 1.5s ease-in-out infinite; }
+
+/* ── Fade in ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* ── Slide down (notification banner) ── */
+@keyframes slideDown {
+  from { transform: translateY(-110%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(0);     opacity: 1; }
+  to   { transform: translateY(-110%); opacity: 0; }
+}
+.notif-enter { animation: slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.notif-exit  { animation: slideUp  0.3s ease forwards; }
+
+/* ── Progress bar fill ── */
+@keyframes progressFill {
+  from { width: 0%; }
+}
+.progress-bar { animation: progressFill 0.8s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* ── react-calendar overrides ── */
+.cal-wrapper .react-calendar {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+.cal-wrapper .react-calendar__navigation button {
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  min-width: 36px;
+}
+.cal-wrapper .react-calendar__navigation button:hover,
+.cal-wrapper .react-calendar__navigation button:focus {
+  background: var(--bg) !important;
+}
+.cal-wrapper .react-calendar__month-view__weekdays__weekday {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.cal-wrapper .react-calendar__month-view__weekdays__weekday abbr { text-decoration: none; }
+.cal-wrapper .react-calendar__tile {
+  background: var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 10px 4px;
+  margin: 2px;
+  transition: background 0.15s, transform 0.1s;
+  position: relative;
+}
+.cal-wrapper .react-calendar__tile:hover:not(:disabled) {
+  background: var(--primary) !important;
+  color: #fff !important;
+  transform: scale(1.05);
+}
+/* Completed = green */
+.cal-wrapper .react-calendar__tile.cal-done {
+  background: #22c55e !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+/* Missed = red (past days not completed) */
+.cal-wrapper .react-calendar__tile.cal-missed {
+  background: #fecaca !important;
+  color: #b91c1c !important;
+}
+.dark .cal-wrapper .react-calendar__tile.cal-missed {
+  background: #450a0a !important;
+  color: #fca5a5 !important;
+}
+/* Today ring */
+.cal-wrapper .react-calendar__tile.cal-today {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+/* Has reminder dot */
+.cal-wrapper .react-calendar__tile.cal-reminder::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+/* Remove default active/selected blue */
+.cal-wrapper .react-calendar__tile--active,
+.cal-wrapper .react-calendar__tile--now {
+  background: var(--border) !important;
+  color: var(--text) !important;
+}
+.cal-wrapper .react-calendar__tile--active.cal-done,
+.cal-wrapper .react-calendar__tile--now.cal-done {
+  background: #22c55e !important;
+  color: #fff !important;
+}
+.cal-wrapper .react-calendar__month-view__days__day--neighboringMonth {
+  opacity: 0;
+  pointer-events: none;
+}

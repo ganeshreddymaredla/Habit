@@ -1,0 +1,81 @@
+HABIT TRACKER — SYSTEM ARCHITECTURE DOCUMENT
+=============================================
+
+1. PROJECT OVERVIEW
+   - Full-stack web app to create, track, and analyze daily habits
+   - Features: habit CRUD, daily check-in, streak tracking, grace day,
+     analytics, dark mode, notifications, test mode (time travel)
+
+2. TECHNOLOGY STACK
+   - Frontend : React 19, Tailwind CSS, Axios, Recharts, Vite
+   - Template : Django templates, Bootstrap 5, Chart.js, Vanilla JS
+   - Backend  : Django 6, Django REST Framework, SimpleJWT, CORS Headers
+   - Database : SQLite (dev) — swappable to PostgreSQL
+   - Other    : Celery + Redis (email reports), Gmail SMTP, Browser Notifications
+
+3. SYSTEM ARCHITECTURE
+   - Pattern  : Client-Server + Django MVT (for template app)
+   - React SPA talks to Django REST API via Axios (JWT in headers)
+   - Vite dev server proxies /api/* to Django on port 8000
+   - Django template app uses session auth + server-rendered HTML
+
+4. FRONTEND STRUCTURE (React — /frontend/src)
+   - pages/      : Dashboard, Analytics, Login, Register
+   - components/ : Navbar, HabitCard, HabitModal, CalendarModal, NotificationBanner
+   - context/    : AuthContext, ThemeContext, TestModeContext
+   - services/   : api.js (Axios + interceptors), notifications.js
+
+5. BACKEND STRUCTURE (/backend/habits)
+   - models.py    : Habit (streak fields), HabitLog (date, completed, note)
+   - serializers.py: HabitSerializer (stats, grace_used, completed_today)
+   - views.py     : checkin, undo, analytics, day_breakdown, day_summary
+   - services.py  : get_today, apply_grace_streak, build_daily_breakdown
+   - urls.py      : All API route mappings
+
+6. DATABASE MODELS
+   - User      : id, username, email, password (Django built-in)
+   - Habit     : user FK, name, category, current_streak,
+                 last_completed_date, grace_used
+   - HabitLog  : habit FK, date, completed, note — unique(habit, date)
+   - UserProfile (habitapp): user 1:1, phone, theme preference
+
+7. CORE FEATURES
+   - Auth       : JWT (React) / Session (template) — login, register, logout
+   - Check-in   : get_or_create HabitLog → apply_grace_streak → save
+   - Grace Day  : gap=1→streak++, gap=2+no grace→streak++grace=True, else reset
+   - Analytics  : build_daily_breakdown() — 2 bulk queries, iterate in Python
+   - Notifications: Browser Notification API + in-app banner, 30s scheduler
+
+8. KEY API ENDPOINTS
+   POST /api/auth/login/              → { access, refresh }
+   POST /api/auth/register/           → { id, username, email }
+   GET  /api/habits/                  → [ HabitObject ]
+   POST /api/habits/                  → HabitObject
+   POST /api/habits/<id>/checkin/     → HabitObject (updated streak)
+   POST /api/habits/<id>/undo/        → HabitObject
+   GET  /api/analytics/               → { habits, weekly, monthly, pie }
+   GET  /api/analytics/breakdown/?range=7|30 → { days[], summary{} }
+
+9. DATA FLOW (check-in example)
+   Click → Axios POST (JWT + X-Test-Date) → Vite proxy → Django auth →
+   get_today() → get_or_create HabitLog → apply_grace_streak() →
+   DB write → HabitSerializer → JSON → React state update → UI re-render
+
+10. TEST MODE (Time Travel)
+    - Toggle in Navbar sets simulatedDate in localStorage + TestModeContext
+    - Axios interceptor attaches X-Test-Date header on every request
+    - Backend get_today(request) reads header, falls back to date.today()
+    - Enables full streak/grace simulation without touching production data
+
+11. SECURITY
+    - JWT tokens expire (1 day access, 7 day refresh) — auto-refreshed
+    - Django CSRF protection on all template form submissions
+    - Passwords hashed via Django's PBKDF2 + strong password validators
+    - @login_required on all habit views; IsAuthenticated on all API views
+
+12. FUTURE ENHANCEMENTS
+    - React Native mobile app using the same REST API
+    - AI habit recommendations based on completion patterns
+    - PostgreSQL + Redis for production deployment
+    - OAuth2 social login (Google, GitHub)
+    - Habit sharing and leaderboards between friends

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}Analytics — HabitTracker{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+    <div>
+      <a href="{% url 'dashboard' %}" class="text-muted text-decoration-none d-block mb-1" style="font-size:0.875rem">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+      <h1 class="fw-800 mb-0" style="font-size:1.6rem; color:var(--text)">Analytics</h1>
+      <p class="mb-0" style="color:var(--muted); font-size:0.875rem">Your habit performance at a glance</p>
+    </div>
+
+    <!-- Range Selector -->
+    <form method="get" class="d-flex align-items-center gap-2">
+      <label class="mb-0" style="font-size:0.85rem; color:var(--muted); font-weight:600">Range:</label>
+      <select name="range" class="form-select form-select-sm" style="width:140px"
+              onchange="this.form.submit()">
+        <option value="7"  {% if range_type == '7'  %}selected{% endif %}>Last 7 days</option>
+        <option value="30" {% if range_type == '30' %}selected{% endif %}>Last 30 days</option>
+      </select>
+    </form>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(99,102,241,0.1)">📊</div>
+        <div class="stat-value">{{ avg_pct }}%</div>
+        <div class="stat-label">Avg Completion</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.1)">🏆</div>
+        <div class="stat-value" style="font-size:1.1rem">
+          {% if best_day %}{{ best_day.label }}{% else %}—{% endif %}
+        </div>
+        <div class="stat-label">Best Day ({{ best_day.pct|default:0 }}%)</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.1)">📉</div>
+        <div class="stat-value" style="font-size:1.1rem">
+          {% if worst_day %}{{ worst_day.label }}{% else %}—{% endif %}
+        </div>
+        <div class="stat-label">Worst Day ({{ worst_day.pct|default:0 }}%)</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.1)">📅</div>
+        <div class="stat-value">{{ range_type }}d</div>
+        <div class="stat-label">Selected Range</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="analytics-card mb-4">
+    <h6 class="fw-700 mb-3" style="color:var(--text)">
+      <i class="bi bi-bar-chart-line"></i>
+      Completed vs Missed — Last {{ range_type }} Days
+    </h6>
+    <canvas id="rangeChart" height="{% if range_type == '30' %}70{% else %}90{% endif %}"></canvas>
+  </div>
+
+  <!-- Daily Breakdown -->
+  <div class="analytics-card mb-4">
+    <h6 class="fw-700 mb-3" style="color:var(--text)">
+      <i class="bi bi-calendar3"></i> Daily Breakdown
+      <span style="font-size:0.75rem; color:var(--muted); font-weight:400; margin-left:0.5rem">
+        Click a day to see habit details
+      </span>
+    </h6>
+
+    {% if daily_breakdown %}
+    <div id="breakdown-list">
+      {% for day in daily_breakdown %}
+      <div class="breakdown-row {% if day.is_today %}breakdown-today{% endif %}"
+           data-date="{{ day.date }}"
+           onclick="toggleDayDetail(this, '{{ day.date }}')">
+
+        <!-- Date label -->
+        <div class="breakdown-date">
+          <span class="breakdown-label">{{ day.label }}</span>
+          {% if day.is_today %}
+            <span class="badge-today">Today</span>
+          {% endif %}
+        </div>
+
+        <!-- Progress bar + stats -->
+        <div class="breakdown-bar-wrap">
+          <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:var(--muted)">
+            <span>{{ day.completed }}/{{ day.total }} completed</span>
+            <span class="breakdown-pct"
+                  style="color:{% if day.pct >= 70 %}#22c55e{% elif day.pct >= 40 %}#f59e0b{% else %}#ef4444{% endif %}; font-weight:700">
+              {{ day.pct }}%
+            </span>
+          </div>
+          <div class="progress" style="height:7px; margin-bottom:0">
+            <div class="progress-bar" style="width:{{ day.pct }}%;
+              background:{% if day.pct >= 70 %}#22c55e{% elif day.pct >= 40 %}#f59e0b{% else %}#ef4444{% endif %}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini counts -->
+        <div class="breakdown-counts">
+          <span style="color:#22c55e"><i class="bi bi-check-circle-fill"></i> {{ day.completed }}</span>
+          <span style="color:#ef4444"><i class="bi bi-x-circle-fill"></i> {{ day.missed }}</span>
+          <i class="bi bi-chevron-down breakdown-chevron"></i>
+        </div>
+      </div>
+
+      <!-- Expandable detail panel -->
+      <div class="day-detail-panel" id="detail-{{ day.date }}" style="display:none">
+        <div class="day-detail-inner" id="detail-inner-{{ day.date }}">
+          <div class="text-center py-3" style="color:var(--muted); font-size:0.85rem">
+            <div class="spinner-border spinner-border-sm me-2"></div> Loading…
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state py-4">
+      <p>No data for this range yet.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Per-Habit Overall Breakdown -->
+  <div class="analytics-card mb-4">
+    <h6 class="fw-700 mb-3" style="color:var(--text)">
+      <i class="bi bi-list-check"></i> Per-Habit Overall Stats
+    </h6>
+    {% if habit_stats %}
+      {% for s in habit_stats %}
+      <div class="habit-row">
+        <div class="habit-row-name">
+          {{ s.habit.name }}
+          <span class="habit-badge ms-2">{{ s.habit.get_category_display }}</span>
+        </div>
+        <div style="flex:1; min-width:120px">
+          <div class="d-flex justify-content-between mb-1" style="font-size:0.75rem; color:var(--muted)">
+            <span>All-time completion</span>
+            <span style="font-weight:700;
+              color:{% if s.pct >= 70 %}#22c55e{% elif s.pct >= 40 %}#f59e0b{% else %}#ef4444{% endif %}">
+              {{ s.pct }}%
+            </span>
+          </div>
+          <div class="progress" style="height:6px; margin-bottom:0">
+            <div class="progress-bar" style="width:{{ s.pct }}%;
+              background:{% if s.pct >= 70 %}#22c55e{% elif s.pct >= 40 %}#f59e0b{% else %}#ef4444{% endif %}">
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-3" style="font-size:0.8rem; color:var(--muted); min-width:140px">
+          <span>🔥 <strong style="color:var(--text)">{{ s.streak }}d</strong></span>
+          <span>🏆 <strong style="color:var(--text)">{{ s.longest }}d</strong></span>
+          <span>✓ <strong style="color:var(--text)">{{ s.total }}</strong></span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state py-4">
+        <p>No habits yet. <a href="{% url 'add_habit' %}">Add one!</a></p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Chart ── */
+const isDark    = localStorage.getItem('theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+const textColor = isDark ? '#94a3b8' : '#64748b';
+
+new Chart(document.getElementById('rangeChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [
+      { label: 'Completed', data: {{ chart_done|safe }},   backgroundColor: 'rgba(34,197,94,0.75)',  borderRadius: 5 },
+      { label: 'Missed',    data: {{ chart_missed|safe }}, backgroundColor: 'rgba(239,68,68,0.50)',  borderRadius: 5 },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: textColor, font: { size: 12 } } } },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor }, grid: { color: gridColor } },
+      x: { ticks: { color: textColor, maxRotation: 45 }, grid: { display: false } },
+    }
+  }
+});
+
+/* ── Day Detail Toggle ── */
+const openPanels = new Set();
+
+function toggleDayDetail(row, dateStr) {
+  const panel   = document.getElementById('detail-' + dateStr);
+  const chevron = row.querySelector('.breakdown-chevron');
+  const isOpen  = openPanels.has(dateStr);
+
+  if (isOpen) {
+    panel.style.display = 'none';
+    chevron.style.transform = 'rotate(0deg)';
+    openPanels.delete(dateStr);
+    return;
+  }
+
+  panel.style.display = 'block';
+  chevron.style.transform = 'rotate(180deg)';
+  openPanels.add(dateStr);
+
+  const inner = document.getElementById('detail-inner-' + dateStr);
+  // Only fetch once
+  if (inner.dataset.loaded) return;
+  inner.dataset.loaded = '1';
+
+  fetch(`/analytics/day/?date=${dateStr}`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.habits || data.habits.length === 0) {
+      inner.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:0.75rem 0">No habits tracked on this day.</p>';
+      return;
+    }
+    const rows = data.habits.map(h => `
+      <div class="detail-habit-row">
+        <span class="detail-habit-name">${h.name}</span>
+        <span class="detail-habit-cat">${h.category}</span>
+        <span class="detail-habit-status ${h.completed ? 'done' : 'missed'}">
+          ${h.completed ? '<i class="bi bi-check-circle-fill"></i> Done' : '<i class="bi bi-x-circle-fill"></i> Missed'}
+        </span>
+      </div>`).join('');
+    inner.innerHTML = rows;
+  })
+  .catch(() => {
+    inner.innerHTML = '<p style="color:#ef4444; font-size:0.85rem; padding:0.75rem 0">Failed to load details.</p>';
+  });
+}
+</script>
+{% endblock %}

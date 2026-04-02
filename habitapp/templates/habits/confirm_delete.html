@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Delete Habit — HabitTracker{% endblock %}
+{% block content %}
+<div class="container" style="max-width:440px">
+  <div class="analytics-card text-center">
+    <div style="font-size:3rem; margin-bottom:1rem">🗑️</div>
+    <h2 class="fw-800 mb-2" style="color:var(--text)">Delete Habit?</h2>
+    <p style="color:var(--muted)" class="mb-4">
+      Are you sure you want to delete <strong>{{ habit.name }}</strong>?
+      This will remove all its logs and streaks. This cannot be undone.
+    </p>
+    <form method="post" class="d-flex gap-2 justify-content-center">
+      {% csrf_token %}
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary flex-fill">Cancel</a>
+      <button type="submit" class="btn btn-danger flex-fill">
+        <i class="bi bi-trash"></i> Yes, Delete
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

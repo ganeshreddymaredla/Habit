@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} — HabitTracker{% endblock %}
+{% block content %}
+<div class="container" style="max-width:520px">
+  <div class="mb-4">
+    <a href="{% url 'dashboard' %}" class="text-muted text-decoration-none" style="font-size:0.875rem">
+      <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <div class="analytics-card">
+    <h2 class="fw-800 mb-4" style="font-size:1.4rem; color:var(--text)">
+      {% if title == 'Add Habit' %}
+        <i class="bi bi-plus-circle text-primary"></i>
+      {% else %}
+        <i class="bi bi-pencil text-primary"></i>
+      {% endif %}
+      {{ title }}
+    </h2>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label">Habit Name *</label>
+        <input type="text" name="name" value="{{ form.name.value|default:'' }}"
+               class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+               placeholder="e.g. Morning run" required maxlength="200" />
+        {% for e in form.name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="2"
+                  class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                  placeholder="Optional details…">{{ form.description.value|default:'' }}</textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select">
+          {% for val, label in form.fields.category.choices %}
+            <option value="{{ val }}" {% if form.category.value == val %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="d-flex gap-2">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary flex-fill">Cancel</a>
+        <button type="submit" class="btn btn-primary flex-fill">
+          <i class="bi bi-check-lg"></i> Save Habit
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
