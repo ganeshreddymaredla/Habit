@@ -34,6 +34,6 @@ Runs at http://localhost:5173
 ## Team Name
 Code Turtles
 
-Ganesh Reddy Maredla
-Abhishek Repala
+Ganesh Reddy Maredla 
+Abhishek Repala 
 Hrithik Mohan Singh Thakur
