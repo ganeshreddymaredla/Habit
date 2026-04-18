@@ -30,10 +30,3 @@ Runs at http://localhost:5173
 | GET/PATCH/DELETE | /api/habits/:id/ | Habit detail |
 | POST | /api/habits/:id/checkin/ | Daily check-in |
 | GET  | /api/habits/:id/logs/ | Completion history |
-
-## Team Name
-Code Turtles  
-
-Ganesh Reddy Maredla  
-Abhishek Repala  
-Hrithik Mohan Singh Thakur  
